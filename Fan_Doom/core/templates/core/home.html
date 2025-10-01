@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fan_Doom - Home</title>
+    <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
+    <style>
+        @keyframes popIn {
+            0% { transform: scale(0.85); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        #modal-bg {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.35);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        #modal-bg.active {
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+    {% include 'core/base.html' %}
+    <div class="container" style="display:flex;gap:2rem;max-width:1200px;margin:2rem auto;align-items:flex-start;">
+        <!-- Autores a seguir -->
+        <aside style="flex:0 0 220px;background:#fff;border-radius:14px;box-shadow:0 2px 8px #0001;padding:1.2rem 1rem;min-height:300px;">
+            <h3 style="margin-bottom:1rem;font-size:1.1rem;color:#23272d;">Autores a seguir</h3>
+            <div style="display:flex;flex-direction:column;gap:0.7rem;">
+                {% for author in authors %}
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;" class="author-follow-row" data-author-id="{{ author.id }}">
+                        <span style="font-weight:500;">{{ author.user.username }}</span>
+                        <button class="follow-author-btn" style="background:#23272d;color:#fff;padding:0.3rem 0.8rem;border:none;border-radius:6px;font-size:0.98rem;font-weight:600;transition:all 0.2s;">Seguir</button>
+                    </div>
+                {% empty %}
+                    <span style="color:#888;">No hay autores.</span>
+                {% endfor %}
+                {% if total_autores > 6 %}
+                <div style="text-align:center;margin-top:1rem;">
+                    <button style="background:#eee;color:#23272d;padding:0.5rem 1.2rem;border:none;border-radius:6px;font-size:1rem;font-weight:600;">Ver más autores a seguir</button>
+                </div>
+                {% endif %}
+            </div>
+        </aside>
+        <!-- Muro de posts -->
+        <div style="flex:1;min-width:0;">
+            <div id="post-bar-center" style="margin:0 auto 2rem auto;max-width:520px;position:relative;">
+                <div id="post-input-bar" style="background:#fff;border-radius:30px;box-shadow:0 2px 8px #0002;padding:0;display:flex;align-items:center;cursor:pointer;">
+                    <button id="trigger-post-form" type="button" style="width:100%;padding:1rem 1.5rem;border:none;outline:none;background:#f3f4f6;font-size:1.15rem;color:#23272d;border-radius:30px;font-weight:600;box-shadow:none;transition:background 0.2s;cursor:pointer;">¿Qué quieres opinar?</button>
+                </div>
+            </div>
+            <div id="modal-bg" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.35);z-index:2000;justify-content:center;align-items:center;flex-direction:column;">
+                <div id="post-modal" style="animation:popIn 0.18s cubic-bezier(.4,1.4,.6,1) 1;max-width:420px;width:95vw;">
+                    <form id="post-form" method="post" enctype="multipart/form-data" style="background:#fff;padding:2rem 1.5rem 1.5rem 1.5rem;border-radius:18px;box-shadow:0 4px 32px #0004;display:flex;flex-direction:column;gap:0.7rem;max-height:80vh;overflow-y:auto;">
+                        {% csrf_token %}
+                        {% if error %}<div style="color:red;margin-bottom:1rem;">{{ error }}</div>{% endif %}
+                        <div style="display:flex;flex-direction:column;gap:0.7rem;">
+                            <select name="work" required style="width:100%;padding:0.5rem;border-radius:6px;border:1px solid #ccc;">
+                                <option value="">Selecciona una obra (como subreddit)</option>
+                                {% for work in works_followed %}
+                                    <option value="{{ work.id }}">{{ work.title }}</option>
+                                {% endfor %}
+                            </select>
+                            <input type="text" name="title" placeholder="Título del post" style="width:100%;padding:0.7rem;font-size:1.15rem;border-radius:6px;border:1.5px solid #bbb;font-weight:600;" required>
+                            <textarea name="content" placeholder="Texto (opcional)" style="width:100%;min-height:90px;padding:0.7rem;border-radius:6px;border:1.5px solid #bbb;font-size:1.05rem;"></textarea>
+                            <div style="margin-top:0.5rem;">
+                                <label style="font-size:0.98rem;color:#23272d;font-weight:500;">Imagen (opcional):
+                                    <input type="file" name="image" accept="image/*" style="margin-top:0.2rem;">
+                                </label>
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:1rem;">
+                            <button type="submit" style="flex:1;background:#23272d;color:#fff;padding:0.7rem;border:none;border-radius:6px;font-size:1.1rem;font-weight:600;">Publicar</button>
+                            <button type="button" id="close-post-form" style="background:#eee;color:#23272d;padding:0.7rem 1.2rem;border:none;border-radius:6px;font-size:1.1rem;font-weight:600;">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <style>
+            @keyframes popIn {
+                0% { transform: scale(0.85); opacity: 0; }
+                100% { transform: scale(1); opacity: 1; }
+            }
+            </style>
+            <h2 style="margin-bottom:1rem;">Últimos posts</h2>
+            <div id="post-list">
+                {% for post in posts %}
+                <div class="post" style="background:#fff;padding:1.2rem 1.2rem 0.7rem 1.2rem;border-radius:12px;box-shadow:0 2px 8px #0002;margin-bottom:1.5rem;display:flex;gap:1.2rem;">
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:0.5rem;min-width:40px;">
+                        <button style="background:none;border:none;font-size:1.5rem;color:#bbb;cursor:pointer;">▲</button>
+                        <span style="font-weight:600;font-size:1.1rem;color:#888;">0</span>
+                        <button style="background:none;border:none;font-size:1.5rem;color:#bbb;cursor:pointer;">▼</button>
+                    </div>
+                    <div style="flex:1;min-width:0;">
+                        <div style="display:flex;align-items:center;gap:0.7rem;margin-bottom:0.2rem;">
+                            <span style="font-size:0.97rem;color:#888;">Publicado por <b>{{ post.author.user.username }}</b> en <span style="color:#3b82f6;font-weight:600;">{{ post.fandom.name }}</span> • {{ post.created_at|date:"d M Y H:i" }}</span>
+                        </div>
+                        <h2 style="margin:0 0 0.5rem 0;font-size:1.35rem;font-weight:700;line-height:1.2;"><a href="{% url 'post_detail' post.id %}" style="color:#23272d;text-decoration:none;">{{ post.title }}</a></h2>
+                        {% if post.content %}<div style="margin-bottom:0.7rem;font-size:1.08rem;white-space:pre-line;">{{ post.content|linebreaksbr }}</div>{% endif %}
+                        {% if post.image %}<img src="{{ post.image.url }}" alt="Imagen del post" style="max-width:100%;border-radius:8px;margin-bottom:0.7rem;" />{% endif %}
+                        <div style="display:flex;gap:1.5rem;margin-top:0.5rem;">
+                            <button style="background:none;border:none;color:#888;font-size:1.05rem;cursor:pointer;display:flex;align-items:center;gap:0.3rem;"><span style="font-size:1.2rem;">💬</span> Comentar</button>
+                            <button style="background:none;border:none;color:#888;font-size:1.05rem;cursor:pointer;display:flex;align-items:center;gap:0.3rem;"><span style="font-size:1.2rem;">🔗</span> Compartir</button>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                    <p>No posts disponibles.</p>
+                {% endfor %}
+            </div>
+        </div>
+        <!-- Obras a seguir -->
+        <aside style="flex:0 0 220px;background:#fff;border-radius:14px;box-shadow:0 2px 8px #0001;padding:1.2rem 1rem;min-height:300px;">
+            <h3 style="margin-bottom:1rem;font-size:1.1rem;color:#23272d;">Obras a seguir</h3>
+            <div style="display:flex;flex-direction:column;gap:0.7rem;">
+                {% for work in works %}
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;" class="work-follow-row" data-work-id="{{ work.id }}">
+                        <span style="font-weight:500;">{{ work.title }}</span>
+                        <button class="follow-work-btn" style="background:#23272d;color:#fff;padding:0.3rem 0.8rem;border:none;border-radius:6px;font-size:0.98rem;font-weight:600;transition:all 0.2s;">Seguir</button>
+                    </div>
+                {% empty %}
+                    <span style="color:#888;">No hay obras.</span>
+                {% endfor %}
+                {% if total_obras > 6 %}
+                <div style="text-align:center;margin-top:1rem;">
+                    <button style="background:#eee;color:#23272d;padding:0.5rem 1.2rem;border:none;border-radius:6px;font-size:1rem;font-weight:600;">Ver más obras a seguir</button>
+                </div>
+                {% endif %}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Seguir autor
+    document.querySelectorAll('.follow-author-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const row = btn.closest('.author-follow-row');
+            const authorId = row.getAttribute('data-author-id');
+            fetch('{% url "follow_author" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'author_id=' + authorId
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.ok) {
+                    btn.innerHTML = '✓';
+                    btn.style.background = '#22c55e';
+                    setTimeout(() => {
+                        row.style.transition = 'opacity 0.4s';
+                        row.style.opacity = 0;
+                        setTimeout(() => row.remove(), 400);
+                    }, 600);
+                }
+            });
+        });
+    });
+    // Seguir obra
+    document.querySelectorAll('.follow-work-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const row = btn.closest('.work-follow-row');
+            const workId = row.getAttribute('data-work-id');
+            fetch('{% url "follow_work" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'work_id=' + workId
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.ok) {
+                    btn.innerHTML = '✓';
+                    btn.style.background = '#22c55e';
+                    setTimeout(() => {
+                        row.style.transition = 'opacity 0.4s';
+                        row.style.opacity = 0;
+                        setTimeout(() => row.remove(), 400);
+                    }, 600);
+                }
+            });
+        });
+    });
+    
+    // Modal de publicación
+    const modalBg = document.getElementById('modal-bg');
+    const postForm = document.getElementById('post-form');
+    const triggerPostForm = document.getElementById('trigger-post-form');
+    const closePostForm = document.getElementById('close-post-form');
+    
+    // Abrir modal
+    triggerPostForm.addEventListener('click', () => {
+        modalBg.classList.add('active');
+    });
+    
+    // Cerrar modal
+    closePostForm.addEventListener('click', () => {
+        modalBg.classList.remove('active');
+    });
+    
+    // Cerrar al hacer clic fuera
+    modalBg.addEventListener('click', (e) => {
+        if (e.target === modalBg) {
+            modalBg.classList.remove('active');
+        }
+    });
+    
+    // Prevenir que el clic en el modal cierre el modal
+    document.getElementById('post-modal').addEventListener('click', (e) => {
+        e.stopPropagation();
+    });
+    
+    // Manejo del formulario
+    postForm.addEventListener('submit', function(e) {
+        const content = this.querySelector('[name="content"]').value.trim();
+        const image = this.querySelector('[name="image"]').files[0];
+        
+        if (!content && !image) {
+            e.preventDefault();
+            alert('La publicación debe tener texto o imagen');
+            return false;
+        }
+        return true;
+    });
+});
+</script>
+            </div>
+        </aside>
+    </div>
+</body>
+</html>

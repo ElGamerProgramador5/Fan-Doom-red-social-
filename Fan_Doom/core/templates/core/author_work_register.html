@@ -1,0 +1,22 @@
+{% extends 'core/base.html' %}
+{% block title %}Registro de Obra - Autor{% endblock %}
+{% block content %}
+<div style="max-width:500px;margin:2rem auto;background:#fff;padding:2rem 2.5rem;border-radius:18px;box-shadow:0 4px 32px #0002;">
+    <h2 style="margin-bottom:1.2rem;">Registro de tu Obra</h2>
+    <form method="post">
+        {% csrf_token %}
+        <label style="font-weight:600;">Nombre de la obra:</label>
+        <input type="text" name="work_title" required style="width:100%;margin-bottom:1rem;padding:0.5rem;border-radius:6px;border:1px solid #ccc;">
+        <label style="font-weight:600;">Descripción de la obra:</label>
+        <textarea name="work_description" required style="width:100%;min-height:80px;margin-bottom:1rem;padding:0.5rem;border-radius:6px;border:1px solid #ccc;"></textarea>
+        <div style="background:#f8f8f8;border-radius:8px;padding:1rem;margin-bottom:1rem;border:1px solid #eee;">
+            <strong>Aviso de integridad intelectual:</strong>
+            <p style="font-size:0.97rem;">Al continuar, declaras que eres el autor legítimo de la obra y aceptas respetar los derechos de autor y la integridad intelectual de otros usuarios. Cualquier violación puede resultar en la suspensión de tu cuenta.</p>
+            <label style="display:flex;align-items:center;margin-top:0.5rem;">
+                <input type="checkbox" name="accept_integrity" required style="margin-right:0.5rem;">Acepto el aviso de integridad intelectual
+            </label>
+        </div>
+        <button type="submit" style="background:#23272d;color:#fff;padding:0.7rem 1.5rem;border:none;border-radius:6px;font-size:1.1rem;font-weight:600;width:100%;">Registrar obra</button>
+    </form>
+</div>
+{% endblock %}

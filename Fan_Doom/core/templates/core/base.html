@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+   {% load static %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Fan_Doom{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
+    <script src="{% static 'core/js/main.js' %}" defer></script>
+</head>
+<body>
+    <header style="background:#23272d;padding:0.5rem 0 0.5rem 0;display:flex;align-items:center;gap:1.5rem;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:1.5rem;">
+            <a href="{% url 'home' %}" style="display:inline-block;margin-left:1.5rem;">
+                <img src="{% static 'core/img/fan_doom_logo.jpeg' %}" alt="Fan_Doom Logo" style="height:48px;width:auto;vertical-align:middle;filter:grayscale(1);transition:filter 0.2s;cursor:pointer;" onmouseover="this.style.filter='none'" onmouseout="this.style.filter='grayscale(1)'" />
+            </a>
+            <span style="color:#fff;font-size:1.5rem;font-weight:700;letter-spacing:1px;">Fan_Doom</span>
+        </div>
+        <div style="position:relative;margin-right:2rem;">
+            <button id="profile-btn" style="background:none;border:none;outline:none;cursor:pointer;padding:0;">
+                <img src="https://cdn.jsdelivr.net/gh/edent/SuperTinyIcons/images/svg/user.svg" alt="Perfil" style="height:38px;width:38px;border-radius:50%;background:#fff;box-shadow:0 2px 8px #0002;" />
+            </button>
+            <div id="profile-menu" style="display:none;position:absolute;right:0;top:110%;background:#fff;border-radius:10px;box-shadow:0 4px 16px #0003;padding:0.5rem 0;min-width:150px;z-index:3000;">
+                <a href="#" id="view-profile" style="display:block;padding:0.7rem 1.2rem;color:#23272d;text-decoration:none;font-weight:500;">Ver perfil</a>
+                <a href="/logout/" id="logout-link" style="display:block;padding:0.7rem 1.2rem;color:#c00;text-decoration:none;font-weight:500;">Salir</a>
+            </div>
+        </div>
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var btn = document.getElementById('profile-btn');
+            var menu = document.getElementById('profile-menu');
+            if(btn && menu) {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+                });
+                document.addEventListener('click', function(e) {
+                    if(menu.style.display === 'block' && !menu.contains(e.target) && e.target !== btn) {
+                        menu.style.display = 'none';
+                    }
+                });
+            }
+        });
+        </script>
+    </header>
+    
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer>
+        <p>&copy; {{ current_year }} Fan_Doom. All rights reserved.</p>
+    </footer>
+</body>
+</html>
