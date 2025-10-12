@@ -1,0 +1,37 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Editar Perfil{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:600px;margin:2rem auto;">
+    <div style="background:#fff;padding:2rem 2.5rem;border-radius:18px;box-shadow:0 4px 32px #0002;">
+        <h1 style="margin-bottom:1.5rem;">Editar tu Perfil</h1>
+
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div style="display:flex;flex-direction:column;gap:1.5rem;">
+                <div>
+                    <label style="font-weight:600;display:block;margin-bottom:0.5rem;">Foto de Perfil</label>
+                    <p style="font-size:0.9rem;color:#888;margin-top:0;">Actual: <a href="{{ user.profile.profile_image.url }}" target="_blank">ver imagen</a></p>
+                    {{ form.profile_image }}
+                </div>
+
+                <div>
+                    <label style="font-weight:600;display:block;margin-bottom:0.5rem;">Foto de Portada (Wallpaper)</label>
+                    {% if user.profile.cover_image %}
+                    <p style="font-size:0.9rem;color:#888;margin-top:0;">Actual: <a href="{{ user.profile.cover_image.url }}" target="_blank">ver imagen</a></p>
+                    {% endif %}
+                    {{ form.cover_image }}
+                </div>
+
+                <div>
+                    <label for="{{ form.bio.id_for_label }}" style="font-weight:600;display:block;margin-bottom:0.5rem;">Biografía</label>
+                    {{ form.bio }}
+                </div>
+            </div>
+            <button type="submit" style="background:#23272d;color:#fff;padding:0.7rem 1.5rem;border:none;border-radius:6px;font-size:1.1rem;font-weight:600;width:100%;margin-top:2rem;">Guardar Cambios</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

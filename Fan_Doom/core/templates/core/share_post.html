@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compartir Post</title>
+    <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
+</head>
+<body>
+    {% include 'core/base.html' %}
+    <div class="container" style="max-width:800px;margin:2rem auto;">
+        <h1 style="margin-bottom:1.5rem;">Compartir Post</h1>
+        {% if error %}
+            <div style="background: #ffdddd; border: 1px solid #ff0000; color: #D8000C; padding: 10px; border-radius: 5px; margin-bottom: 1rem;">
+                {{ error }}
+            </div>
+        {% endif %}
+        <form method="POST">
+            {% csrf_token %}
+            <div style="margin-bottom:1rem;">
+                <label for="work" style="display:block;margin-bottom:0.5rem;font-weight:600;">Selecciona una obra:</label>
+                <select name="work" id="work" required style="width:100%;padding:0.7rem;border-radius:6px;border:1.5px solid #bbb;font-size:1.05rem;">
+                    <option value="">---</option>
+                    {% for work in works %}
+                        <option value="{{ work.id }}">{{ work.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="margin-bottom:1rem;">
+                <label for="content" style="display:block;margin-bottom:0.5rem;font-weight:600;">Añade un comentario (opcional):</label>
+                <textarea name="content" id="content" placeholder="Tu comentario..." style="width:100%;min-height:80px;padding:0.7rem;border-radius:6px;border:1.5px solid #bbb;font-size:1.05rem;"></textarea>
+            </div>
+            <button type="submit" style="background:#23272d;color:#fff;padding:0.7rem 1.2rem;border:none;border-radius:6px;font-size:1.1rem;font-weight:600;">Compartir</button>
+        </form>
+
+        <h2 style="margin-top:2rem;margin-bottom:1rem;">Post Original:</h2>
+        <div class="post" style="background:#f9f9f9;padding:1.2rem;border-radius:12px;border:1px solid #eee;">
+            <div style="display:flex;align-items:center;gap:0.7rem;margin-bottom:0.2rem;">
+                <span style="font-size:0.97rem;color:#888;">Publicado por <b>{{ post.user.username }}</b> en <span style="color:#3b82f6;font-weight:600;">{{ post.work.title }}</span> • {{ post.created_at|date:"d M Y H:i" }}</span>
+            </div>
+            <h3 style="margin:0 0 0.5rem 0;font-size:1.2rem;font-weight:700;">{{ post.title }}</h3>
+            {% if post.content %}<div style="margin-bottom:0.7rem;font-size:1rem;white-space:pre-line;">{{ post.content|linebreaksbr }}</div>{% endif %}
+            {% if post.image %}<img src="{{ post.image.url }}" alt="Imagen del post" style="max-width:100%;border-radius:8px;margin-bottom:0.7rem;" />{% endif %}
+        </div>
+    </div>
+</body>
+</html>

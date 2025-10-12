@@ -6,6 +6,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
 	if (trigger && modalBg) {
 		trigger.addEventListener('click', function() {
+			// Reset form and show all fields for a new post
+			if(form) {
+				form.reset();
+				let sharedInput = form.querySelector('input[name="shared_post_id"]');
+				if (sharedInput) sharedInput.value = '';
+
+				form.querySelector('select[name="work"]').style.display = 'block';
+				form.querySelector('textarea[name="content"]').style.display = 'block';
+				let imageInputContainer = form.querySelector('input[name="image"]');
+				if(imageInputContainer) imageInputContainer.parentElement.parentElement.style.display = 'block';
+			}
+
 			modalBg.style.display = 'flex';
 			setTimeout(function(){
 				var input = form.querySelector('input[name="title"]');

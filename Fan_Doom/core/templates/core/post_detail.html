@@ -1,36 +1,115 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Post Detail</title>
-    <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
-</head>
-<body>
-    {% include 'core/base.html' %}
-    <div class="post-detail">
-        <h1>{{ post.title }}</h1>
-    <p>By: {{ post.author.user.username }}</p>
-        <p>Published on: {{ post.created_at }}</p>
-        <div class="post-content">
-            {{ post.content|safe }}
-        </div>
-        <div class="comments-section">
-            <h2>Comments</h2>
-            {% for comment in post.comments.all %}
-                <div class="comment">
-                    <p><strong>{{ comment.author.user.username }}</strong>: {{ comment.content }}</p>
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ post.title }}{% endblock %}
+
+{% block content %}
+    <div class="container" style="max-width:800px;margin:2rem auto;">
+        <div class="post" style="background:#fff;padding:1.2rem;border-radius:12px;box-shadow:0 2px 8px #0002;margin-bottom:1.5rem;display:flex;gap:1.2rem;">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:0.5rem;min-width:40px;">
+                <button class="vote-btn" data-post-id="{{ post.id }}" data-vote-type="1" style="background:none;border:none;font-size:1.5rem;color:#bbb;cursor:pointer;">▲</button>
+                <span id="vote-count-{{ post.id }}" style="font-weight:600;font-size:1.1rem;color:#888;">{{ post.score }}</span>
+                <button class="vote-btn" data-post-id="{{ post.id }}" data-vote-type="-1" style="background:none;border:none;font-size:1.5rem;color:#bbb;cursor:pointer;">▼</button>
+            </div>
+            <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;gap:0.7rem;margin-bottom:0.2rem;">
+                    <span style="font-size:0.97rem;color:#888;">Publicado por <b>{{ post.user.username }}</b> en <span style="color:#3b82f6;font-weight:600;">{{ post.work.title }}</span> • {{ post.created_at|date:"d M Y H:i" }}</span>
                 </div>
-            {% empty %}
-                <p>No comments yet.</p>
-            {% endfor %}
+                <h2 style="margin:0 0 0.5rem 0;font-size:1.35rem;font-weight:700;line-height:1.2;">{{ post.title }}</h2>
+                {% if post.content %}<div style="margin-bottom:0.7rem;font-size:1.08rem;white-space:pre-line;">{{ post.content|linebreaksbr }}</div>{% endif %}
+                {% if post.image %}<img src="{{ post.image.url }}" alt="Imagen del post" style="max-width:100%;border-radius:8px;margin-bottom:0.7rem;" />{% endif %}
+                <div style="display:flex;gap:1.5rem;margin-top:0.5rem;">
+                    <button class="share-btn" data-post-id="{{ post.id }}" style="background:none;border:none;color:#888;font-size:1.05rem;cursor:pointer;display:flex;align-items:center;gap:0.3rem;"><span style="font-size:1.2rem;">🔗</span> Compartir</button>
+                </div>
+            </div>
         </div>
-        <form method="POST" action="{% url 'add_comment' post.id %}">
-            {% csrf_token %}
-            <textarea name="content" placeholder="Add a comment..." required></textarea>
-            <button type="submit">Submit</button>
-        </form>
+
+        <div class="comments-section" style="background:#fff;padding:1.5rem;border-radius:12px;box-shadow:0 2px 8px #0002;">
+            <h3 style="margin-top:0; margin-bottom:1rem;">{{ comments.count }} Comentario{{ comments.count|pluralize }}</h3>
+            <form method="POST" style="margin-bottom:2rem;">
+                {% csrf_token %}
+                <textarea name="content" placeholder="Añade un comentario..." required style="width:100%;min-height:80px;padding:0.7rem;border-radius:6px;border:1.5px solid #bbb;font-size:1.05rem;margin-bottom:0.5rem;"></textarea>
+                <button type="submit" style="background:#23272d;color:#fff;padding:0.7rem 1.2rem;border:none;border-radius:6px;font-size:1.1rem;font-weight:600;">Enviar comentario</button>
+            </form>
+
+            <div class="comment-list">
+                {% for comment in comments %}
+                    <div class="comment" style="border-top:1px solid #eee;padding:1rem 0;">
+                        <p style="margin:0;"><strong>{{ comment.user.username }}</strong> <span style="color:#888;font-size:0.9rem;">• {{ comment.created_at|date:"d M Y H:i" }}</span></p>
+                        <p style="margin-top:0.3rem;">{{ comment.content|linebreaksbr }}</p>
+                    </div>
+                {% empty %}
+                    <p>No hay comentarios todavía.</p>
+                {% endfor %}
+            </div>
+        </div>
     </div>
-    <script src="{% static 'core/js/main.js' %}"></script>
-</body>
-</html>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.vote-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const postId = this.getAttribute('data-post-id');
+                const voteType = this.getAttribute('data-vote-type');
+                
+                fetch('{% url "vote" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `post_id=${postId}&vote_type=${voteType}`
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.ok) {
+                        const voteCountSpan = document.getElementById(`vote-count-${data.postId}`);
+                        voteCountSpan.textContent = data.score;
+                    }
+                });
+            });
+        });
+
+        // Share button logic (same as home.html)
+        // Note: This assumes the modal HTML is available on the page. 
+        // We should include it from base.html or a separate template file for this to work.
+        // For now, let's add the listener.
+        document.querySelectorAll('.share-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const postId = this.getAttribute('data-post-id');
+                const postElement = this.closest('.post');
+                const modalBg = document.getElementById('modal-bg');
+                const postForm = document.getElementById('post-form');
+
+                if (!modalBg || !postForm) {
+                    // Si el modal no está en la página, redirigimos al home con un parámetro
+                    // para abrir el modal. Esto es un fallback.
+                    window.location.href = `{% url 'home' %}?share=${postId}`;
+                    return;
+                }
+
+                // Limpiar y preparar el formulario
+                postForm.reset();
+                const originalTitle = postElement.querySelector('h2').textContent;
+                const originalAuthor = postElement.querySelector('b').textContent;
+                const sharePreviewContainer = document.getElementById('share-preview-container');
+                sharePreviewContainer.style.display = 'block';
+                sharePreviewContainer.innerHTML = `<span style="font-size:0.9rem;color:#888;">Compartiendo el post de <b>${originalAuthor}</b></span><h4 style="margin:0.2rem 0 0 0;font-size:1rem;">${originalTitle}</h4>`;
+
+                // Add the ID of the post to share to a hidden input
+                let sharedPostInput = postForm.querySelector('input[name="shared_post_id"]') || document.createElement('input');
+                sharedPostInput.type = 'hidden';
+                sharedPostInput.name = 'shared_post_id';
+                sharedPostInput.value = postId;
+                postForm.appendChild(sharedPostInput);
+
+                // Mostrar/ocultar campos correspondientes
+                postForm.querySelector('select[name="work"]').style.display = 'block';
+                postForm.querySelector('textarea[name="content"]').style.display = 'none';
+                postForm.querySelector('input[name="image"]').parentElement.parentElement.style.display = 'none';
+                modalBg.style.display = 'flex';
+            });
+        });
+    });
+    </script>
+{% endblock %}

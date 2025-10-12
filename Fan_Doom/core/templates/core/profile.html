@@ -1,0 +1,76 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ profile_user.username }} - Perfil{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:900px;margin:2rem auto;">
+
+    <!-- Profile Header -->
+    <div id="profile-header" style="background:#fff;border-radius:14px;box-shadow:0 2px 8px #0001;margin-bottom:2rem;overflow:hidden;">
+        <div id="cover-photo" style="background-color:#e2e8f0;height:250px;width:100%;background-size:cover;background-position:center;{% if profile.cover_image %}background-image: url('{{ profile.cover_image.url }}');{% endif %}">
+        </div>
+        <div id="profile-info" style="padding:0 2rem 1.5rem 2rem;position:relative;">
+            <div style="display:flex;align-items:flex-end;gap:1.5rem;margin-top:-80px;">
+                <img src="{{ profile.profile_image.url }}" alt="Foto de perfil" style="height:160px;width:160px;border-radius:50%;background:#fff;border:5px solid #fff;box-shadow:0 2px 8px #0002;object-fit:cover;">
+                <div style="margin-bottom:1rem;">
+                    <h1 style="margin:0;font-size:2.2rem;color:#23272d;">{{ profile_user.username }}</h1>
+                    <span style="color:#888;">Se unió el {{ profile_user.date_joined|date:"d M Y" }}</span>
+                </div>
+            </div>
+            <div style="margin-top:0.5rem;">
+                <p>{{ profile.bio|default:"Este usuario todavía no ha añadido una biografía." }}</p>
+            </div>
+            <div style="position:absolute;top:1.5rem;right:1.5rem;">
+                {% if user == profile_user %}
+                <a href="{% url 'edit_profile' %}" style="background:#eee;color:#23272d;padding:0.6rem 1.2rem;border:none;border-radius:8px;font-size:1rem;font-weight:600;text-decoration:none;">Editar Perfil</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- User's Posts -->
+    <div id="user-posts">
+        <h2 style="margin-bottom:1.5rem;">Publicaciones de {{ profile_user.username }}</h2>
+        <div id="post-list">
+            {% for post in posts %}
+            <div class="post" style="background:#fff;padding:1.2rem 1.2rem 0.7rem 1.2rem;border-radius:12px;box-shadow:0 2px 8px #0002;margin-bottom:1.5rem;display:flex;gap:1.2rem;">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:0.5rem;min-width:40px;">
+                    <button class="vote-btn" data-post-id="{{ post.id }}" data-vote-type="1" style="background:none;border:none;font-size:1.5rem;color:#bbb;cursor:pointer;">▲</button>
+                    <span id="vote-count-{{ post.id }}" style="font-weight:600;font-size:1.1rem;color:#888;">{{ post.score }}</span>
+                    <button class="vote-btn" data-post-id="{{ post.id }}" data-vote-type="-1" style="background:none;border:none;font-size:1.5rem;color:#bbb;cursor:pointer;">▼</button>
+                </div>
+                <div style="flex:1;min-width:0;">
+                    <div style="display:flex;align-items:center;gap:0.7rem;margin-bottom:0.2rem;">
+                        <span style="font-size:0.97rem;color:#888;">Publicado en <span style="color:#3b82f6;font-weight:600;">{{ post.work.title }}</span> • {{ post.created_at|date:"d M Y H:i" }}</span>
+                    </div>
+                    <h2 style="margin:0 0 0.5rem 0;font-size:1.35rem;font-weight:700;line-height:1.2;"><a href="{% url 'post_detail' post.id %}" style="color:#23272d;text-decoration:none;">{{ post.title }}</a></h2>
+                    {% if post.content %}<div style="margin-bottom:0.7rem;font-size:1.08rem;white-space:pre-line;">{{ post.content|linebreaksbr }}</div>{% endif %}
+                    {% if post.image %}<img src="{{ post.image.url }}" alt="Imagen del post" style="max-width:100%;border-radius:8px;margin-bottom:0.7rem;" />{% endif %}
+                    
+                    {% if post.shared_post %}
+                    <a href="{% url 'post_detail' post.shared_post.id %}" style="text-decoration: none; color: inherit; display: block; margin-bottom: 0.7rem;">
+                        <div class="shared-post" style="border: 1px solid #eee; border-radius: 8px; padding: 0.8rem;">
+                            <div style="display:flex;align-items:center;gap:0.7rem;margin-bottom:0.2rem;">
+                                <span style="font-size:0.9rem;color:#888;">Compartido de <b>{{ post.shared_post.user.username }}</b> en <span style="color:#3b82f6;font-weight:600;">{{ post.shared_post.work.title }}</span></span>
+                            </div>
+                            <h3 style="margin:0 0 0.5rem 0;font-size:1.1rem;font-weight:700; color: #23272d;">{{ post.shared_post.title }}</h3>
+                            {% if post.shared_post.content %}<p style="font-size:1rem;white-space:pre-line;margin:0;">{{ post.shared_post.content|truncatewords:30|linebreaksbr }}</p>{% endif %}
+                            {% if post.shared_post.image and not post.shared_post.content %}<img src="{{ post.shared_post.image.url }}" alt="Imagen del post compartido" style="max-width:100%;border-radius:8px;margin-top:0.5rem;" />{% endif %}
+                        </div>
+                    </a>
+                    {% endif %}
+
+                    <div style="display:flex;gap:1.5rem;margin-top:0.5rem;">
+                        <a href="{% url 'post_detail' post.id %}" style="background:none;border:none;color:#888;font-size:1.05rem;cursor:pointer;display:flex;align-items:center;gap:0.3rem;text-decoration:none;"><span style="font-size:1.2rem;">💬</span> {{ post.comments.count }} Comentario{{ post.comments.count|pluralize }}</a>
+                        <button class="share-btn" data-post-id="{{ post.id }}" style="background:none;border:none;color:#888;font-size:1.05rem;cursor:pointer;display:flex;align-items:center;gap:0.3rem;"><span style="font-size:1.2rem;">🔗</span> Compartir</button>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+                <p style="background:#fff;padding:2rem;border-radius:12px;text-align:center;color:#888;">Este usuario todavía no ha hecho ninguna publicación.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

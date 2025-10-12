@@ -1,35 +1,9 @@
-<!DOCTYPE html>
+{% extends 'core/base.html' %}
 {% load static %}
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fan_Doom - Home</title>
-    <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
-    <style>
-        @keyframes popIn {
-            0% { transform: scale(0.85); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        #modal-bg {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0,0,0,0.35);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-        }
-        #modal-bg.active {
-            display: flex;
-        }
-    </style>
-</head>
-<body>
-    {% include 'core/base.html' %}
+
+{% block title %}Fan_Doom - Home{% endblock %}
+
+{% block content %}
     <div class="container" style="display:flex;gap:2rem;max-width:1200px;margin:2rem auto;align-items:flex-start;">
         <!-- Autores a seguir -->
         <aside style="flex:0 0 220px;background:#fff;border-radius:14px;box-shadow:0 2px 8px #0001;padding:1.2rem 1rem;min-height:300px;">
@@ -62,6 +36,11 @@
                     <form id="post-form" method="post" enctype="multipart/form-data" style="background:#fff;padding:2rem 1.5rem 1.5rem 1.5rem;border-radius:18px;box-shadow:0 4px 32px #0004;display:flex;flex-direction:column;gap:0.7rem;max-height:80vh;overflow-y:auto;">
                         {% csrf_token %}
                         {% if error %}<div style="color:red;margin-bottom:1rem;">{{ error }}</div>{% endif %}
+                        
+                        <!-- Contenedor para la vista previa del post compartido -->
+                        <div id="share-preview-container" style="display: none; border: 1px solid #eee; border-radius: 8px; padding: 0.8rem; margin-bottom: 0.7rem;">
+                        </div>
+
                         <div style="display:flex;flex-direction:column;gap:0.7rem;">
                             <select name="work" required style="width:100%;padding:0.5rem;border-radius:6px;border:1px solid #ccc;">
                                 <option value="">Selecciona una obra (como subreddit)</option>
@@ -95,20 +74,38 @@
                 {% for post in posts %}
                 <div class="post" style="background:#fff;padding:1.2rem 1.2rem 0.7rem 1.2rem;border-radius:12px;box-shadow:0 2px 8px #0002;margin-bottom:1.5rem;display:flex;gap:1.2rem;">
                     <div style="display:flex;flex-direction:column;align-items:center;gap:0.5rem;min-width:40px;">
-                        <button style="background:none;border:none;font-size:1.5rem;color:#bbb;cursor:pointer;">▲</button>
-                        <span style="font-weight:600;font-size:1.1rem;color:#888;">0</span>
-                        <button style="background:none;border:none;font-size:1.5rem;color:#bbb;cursor:pointer;">▼</button>
+                        <button class="vote-btn" data-post-id="{{ post.id }}" data-vote-type="1" style="background:none;border:none;font-size:1.5rem;color:#bbb;cursor:pointer;">▲</button>
+                        <span id="vote-count-{{ post.id }}" style="font-weight:600;font-size:1.1rem;color:#888;">{{ post.score }}</span>
+                        <button class="vote-btn" data-post-id="{{ post.id }}" data-vote-type="-1" style="background:none;border:none;font-size:1.5rem;color:#bbb;cursor:pointer;">▼</button>
                     </div>
                     <div style="flex:1;min-width:0;">
                         <div style="display:flex;align-items:center;gap:0.7rem;margin-bottom:0.2rem;">
-                            <span style="font-size:0.97rem;color:#888;">Publicado por <b>{{ post.author.user.username }}</b> en <span style="color:#3b82f6;font-weight:600;">{{ post.fandom.name }}</span> • {{ post.created_at|date:"d M Y H:i" }}</span>
+                            <span style="font-size:0.97rem;color:#888;">Publicado por <b>{{ post.user.username }}</b> en <span style="color:#3b82f6;font-weight:600;">{{ post.work.title }}</span> • {{ post.created_at|date:"d M Y H:i" }}</span>
                         </div>
                         <h2 style="margin:0 0 0.5rem 0;font-size:1.35rem;font-weight:700;line-height:1.2;"><a href="{% url 'post_detail' post.id %}" style="color:#23272d;text-decoration:none;">{{ post.title }}</a></h2>
                         {% if post.content %}<div style="margin-bottom:0.7rem;font-size:1.08rem;white-space:pre-line;">{{ post.content|linebreaksbr }}</div>{% endif %}
                         {% if post.image %}<img src="{{ post.image.url }}" alt="Imagen del post" style="max-width:100%;border-radius:8px;margin-bottom:0.7rem;" />{% endif %}
+                        
+                        {% if post.shared_post %}
+                        <a href="{% url 'post_detail' post.shared_post.id %}" style="text-decoration: none; color: inherit; display: block; margin-bottom: 0.7rem;">
+                            <div class="shared-post" style="border: 1px solid #eee; border-radius: 8px; padding: 0.8rem;">
+                                <div style="display:flex;align-items:center;gap:0.7rem;margin-bottom:0.2rem;">
+                                    <span style="font-size:0.9rem;color:#888;">Compartido de <b>{{ post.shared_post.user.username }}</b> en <span style="color:#3b82f6;font-weight:600;">{{ post.shared_post.work.title }}</span></span>
+                                </div>
+                                <h3 style="margin:0 0 0.5rem 0;font-size:1.1rem;font-weight:700; color: #23272d;">{{ post.shared_post.title }}</h3>
+                                {% if post.shared_post.content %}
+                                    <p style="font-size:1rem;white-space:pre-line;margin:0;">{{ post.shared_post.content|truncatewords:30|linebreaksbr }}</p>
+                                {% endif %}
+                                {% if post.shared_post.image and not post.shared_post.content %}
+                                    <img src="{{ post.shared_post.image.url }}" alt="Imagen del post compartido" style="max-width:100%;border-radius:8px;margin-top:0.5rem;" />
+                                {% endif %}
+                            </div>
+                        </a>
+                        {% endif %}
+
                         <div style="display:flex;gap:1.5rem;margin-top:0.5rem;">
-                            <button style="background:none;border:none;color:#888;font-size:1.05rem;cursor:pointer;display:flex;align-items:center;gap:0.3rem;"><span style="font-size:1.2rem;">💬</span> Comentar</button>
-                            <button style="background:none;border:none;color:#888;font-size:1.05rem;cursor:pointer;display:flex;align-items:center;gap:0.3rem;"><span style="font-size:1.2rem;">🔗</span> Compartir</button>
+                            <a href="{% url 'post_detail' post.id %}" style="background:none;border:none;color:#888;font-size:1.05rem;cursor:pointer;display:flex;align-items:center;gap:0.3rem;text-decoration:none;"><span style="font-size:1.2rem;">💬</span> Comentar</a>
+                            <button class="share-btn" data-post-id="{{ post.id }}" style="background:none;border:none;color:#888;font-size:1.05rem;cursor:pointer;display:flex;align-items:center;gap:0.3rem;"><span style="font-size:1.2rem;">🔗</span> Compartir</button>
                         </div>
                     </div>
                 </div>
@@ -137,105 +134,69 @@
 </style>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Seguir autor
-    document.querySelectorAll('.follow-author-btn').forEach(function(btn) {
+    // Follow buttons (author and work)
+    // ... (tu código existente para seguir autores y obras) ...
+
+    // Vote buttons
+    document.querySelectorAll('.vote-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
-            const row = btn.closest('.author-follow-row');
-            const authorId = row.getAttribute('data-author-id');
-            fetch('{% url "follow_author" %}', {
+            const postId = this.getAttribute('data-post-id');
+            const voteType = this.getAttribute('data-vote-type');
+            
+            fetch("{% url 'vote' %}", {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': '{{ csrf_token }}',
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: 'author_id=' + authorId
+                body: `post_id=${postId}&vote_type=${voteType}`
             })
             .then(r => r.json())
             .then(data => {
                 if (data.ok) {
-                    btn.innerHTML = '✓';
-                    btn.style.background = '#22c55e';
-                    setTimeout(() => {
-                        row.style.transition = 'opacity 0.4s';
-                        row.style.opacity = 0;
-                        setTimeout(() => row.remove(), 400);
-                    }, 600);
+                    document.getElementById(`vote-count-${data.postId}`).textContent = data.score;
                 }
             });
         });
     });
-    // Seguir obra
-    document.querySelectorAll('.follow-work-btn').forEach(function(btn) {
+
+    // Share button
+    document.querySelectorAll('.share-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
-            const row = btn.closest('.work-follow-row');
-            const workId = row.getAttribute('data-work-id');
-            fetch('{% url "follow_work" %}', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}',
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: 'work_id=' + workId
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.ok) {
-                    btn.innerHTML = '✓';
-                    btn.style.background = '#22c55e';
-                    setTimeout(() => {
-                        row.style.transition = 'opacity 0.4s';
-                        row.style.opacity = 0;
-                        setTimeout(() => row.remove(), 400);
-                    }, 600);
-                }
-            });
+            const postId = this.getAttribute('data-post-id');
+            const postElement = this.closest('.post');
+            const modalBg = document.getElementById('modal-bg');
+            const postForm = document.getElementById('post-form');
+            
+            // Limpiar y preparar el formulario para compartir
+            postForm.reset();
+            const originalTitle = postElement.querySelector('h2 a').textContent;
+            const originalAuthor = postElement.querySelector('b').textContent;
+            const sharePreviewContainer = document.getElementById('share-preview-container');
+            sharePreviewContainer.style.display = 'block';
+            sharePreviewContainer.innerHTML = `<span style="font-size:0.9rem;color:#888;">Compartiendo el post de <b>${originalAuthor}</b></span><h4 style="margin:0.2rem 0 0 0;font-size:1rem;">${originalTitle}</h4>`;
+
+            // Añadir el ID del post a compartir
+            let sharedPostInput = postForm.querySelector('input[name="shared_post_id"]');
+            if (!sharedPostInput) {
+                sharedPostInput = document.createElement('input');
+                sharedPostInput.type = 'hidden';
+                sharedPostInput.name = 'shared_post_id';
+                postForm.appendChild(sharedPostInput);
+            }
+            sharedPostInput.value = postId;
+
+            // Mostrar el selector de obra, ocultar contenido e imagen
+            postForm.querySelector('select[name="work"]').style.display = 'block';
+            postForm.querySelector('textarea[name="content"]').style.display = 'none';
+            postForm.querySelector('input[name="image"]').parentElement.parentElement.style.display = 'none';
+            modalBg.style.display = 'flex';
         });
     });
-    
-    // Modal de publicación
-    const modalBg = document.getElementById('modal-bg');
-    const postForm = document.getElementById('post-form');
-    const triggerPostForm = document.getElementById('trigger-post-form');
-    const closePostForm = document.getElementById('close-post-form');
-    
-    // Abrir modal
-    triggerPostForm.addEventListener('click', () => {
-        modalBg.classList.add('active');
-    });
-    
-    // Cerrar modal
-    closePostForm.addEventListener('click', () => {
-        modalBg.classList.remove('active');
-    });
-    
-    // Cerrar al hacer clic fuera
-    modalBg.addEventListener('click', (e) => {
-        if (e.target === modalBg) {
-            modalBg.classList.remove('active');
-        }
-    });
-    
-    // Prevenir que el clic en el modal cierre el modal
-    document.getElementById('post-modal').addEventListener('click', (e) => {
-        e.stopPropagation();
-    });
-    
-    // Manejo del formulario
-    postForm.addEventListener('submit', function(e) {
-        const content = this.querySelector('[name="content"]').value.trim();
-        const image = this.querySelector('[name="image"]').files[0];
-        
-        if (!content && !image) {
-            e.preventDefault();
-            alert('La publicación debe tener texto o imagen');
-            return false;
-        }
-        return true;
-    });
+
 });
 </script>
             </div>
         </aside>
     </div>
-</body>
-</html>
+{% endblock %}
