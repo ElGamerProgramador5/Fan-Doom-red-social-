@@ -13,7 +13,13 @@
             </div>
             <div style="flex:1;min-width:0;">
                 <div style="display:flex;align-items:center;gap:0.7rem;margin-bottom:0.2rem;">
-                    <span style="font-size:0.97rem;color:#888;">Publicado por <b>{{ post.user.username }}</b> en <span style="color:#3b82f6;font-weight:600;">{{ post.work.title }}</span> • {{ post.created_at|date:"d M Y H:i" }}</span>
+                    <span style="font-size:0.97rem;color:#888;">Publicado por <b>
+                        {% if post.user.author %}
+                            <a href="{% url 'author_profile' post.user.username %}" style="color: inherit; text-decoration: none;">{{ post.user.username }}</a>
+                        {% else %}
+                            <a href="{% url 'profile' post.user.username %}" style="color: inherit; text-decoration: none;">{{ post.user.username }}</a>
+                        {% endif %}
+                    </b> en <span style="color:#3b82f6;font-weight:600;">{{ post.work.title }}</span> • {{ post.created_at|date:"d M Y H:i" }}</span>
                 </div>
                 <h2 style="margin:0 0 0.5rem 0;font-size:1.35rem;font-weight:700;line-height:1.2;">{{ post.title }}</h2>
                 {% if post.content %}<div style="margin-bottom:0.7rem;font-size:1.08rem;white-space:pre-line;">{{ post.content|linebreaksbr }}</div>{% endif %}
@@ -35,7 +41,13 @@
             <div class="comment-list">
                 {% for comment in comments %}
                     <div class="comment" style="border-top:1px solid #eee;padding:1rem 0;">
-                        <p style="margin:0;"><strong>{{ comment.user.username }}</strong> <span style="color:#888;font-size:0.9rem;">• {{ comment.created_at|date:"d M Y H:i" }}</span></p>
+                        <p style="margin:0;"><strong>
+                            {% if comment.user.author %}
+                                <a href="{% url 'author_profile' comment.user.username %}" style="color: inherit; text-decoration: none;">{{ comment.user.username }}</a>
+                            {% else %}
+                                <a href="{% url 'profile' comment.user.username %}" style="color: inherit; text-decoration: none;">{{ comment.user.username }}</a>
+                            {% endif %}
+                        </strong> <span style="color:#888;font-size:0.9rem;">• {{ comment.created_at|date:"d M Y H:i" }}</span></p>
                         <p style="margin-top:0.3rem;">{{ comment.content|linebreaksbr }}</p>
                     </div>
                 {% empty %}

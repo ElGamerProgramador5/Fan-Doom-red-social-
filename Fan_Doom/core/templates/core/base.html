@@ -21,7 +21,11 @@
                 <img src="{{ user.profile.profile_image.url }}" alt="Perfil" style="height:38px;width:38px;border-radius:50%;background:#fff;box-shadow:0 2px 8px #0002;object-fit:cover;" />
             </button>
             <div id="profile-menu" style="display:none;position:absolute;right:0;top:110%;background:#fff;border-radius:10px;box-shadow:0 4px 16px #0003;padding:0.5rem 0;min-width:150px;z-index:3000;">
-                <a href="{% url 'profile' user.username %}" id="view-profile" style="display:block;padding:0.7rem 1.2rem;color:#23272d;text-decoration:none;font-weight:500;">Ver perfil</a>
+                {% if user.author %}
+                    <a href="{% url 'author_profile' user.username %}" id="view-profile" style="display:block;padding:0.7rem 1.2rem;color:#23272d;text-decoration:none;font-weight:500;">Ver perfil de Autor</a>
+                {% else %}
+                    <a href="{% url 'profile' user.username %}" id="view-profile" style="display:block;padding:0.7rem 1.2rem;color:#23272d;text-decoration:none;font-weight:500;">Ver perfil</a>
+                {% endif %}
                 <a href="/logout/" id="logout-link" style="display:block;padding:0.7rem 1.2rem;color:#c00;text-decoration:none;font-weight:500;">Salir</a>
             </div>
         </div>

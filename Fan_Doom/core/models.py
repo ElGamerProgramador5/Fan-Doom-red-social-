@@ -38,6 +38,8 @@ class Work(models.Model):
     author = models.ForeignKey(Author, on_delete=models.CASCADE, related_name='works')
     title = models.CharField(max_length=200)
     description = models.TextField()
+    genre = models.CharField(max_length=100, blank=True, null=True)
+    target_audience = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

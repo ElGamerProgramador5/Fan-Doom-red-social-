@@ -1,0 +1,62 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ profile_user.username }} - Perfil de Autor{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:900px;margin:2rem auto;">
+
+    <!-- Profile Header -->
+    <div id="profile-header" style="background:#fff;border-radius:14px;box-shadow:0 2px 8px #0001;margin-bottom:2rem;overflow:hidden;">
+        <div id="cover-photo" style="background-color:#e2e8f0;height:250px;width:100%;background-size:cover;background-position:center;{% if profile.cover_image %}background-image: url('{{ profile.cover_image.url }}');{% endif %}">
+        </div>
+        <div id="profile-info" style="padding:0 2rem 1.5rem 2rem;position:relative;">
+            <div style="display:flex;align-items:flex-end;gap:1.5rem;margin-top:-80px;">
+                <img src="{{ profile.profile_image.url }}" alt="Foto de perfil" style="height:160px;width:160px;border-radius:50%;background:#fff;border:5px solid #fff;box-shadow:0 2px 8px #0002;object-fit:cover;">
+                <div style="margin-bottom:1rem;">
+                    <h1 style="margin:0;font-size:2.2rem;color:#23272d;">{{ profile_user.username }}</h1>
+                    <span style="color:#888;">Se unió el {{ profile_user.date_joined|date:"d M Y" }}</span>
+                </div>
+            </div>
+            <div style="margin-top:0.5rem;">
+                <p>{{ profile.bio|default:"Este autor todavía no ha añadido una biografía." }}</p>
+            </div>
+            <div style="position:absolute;top:1.5rem;right:1.5rem; display: flex; gap: 1rem;">
+                {% if user == profile_user %}
+                <a href="{% url 'add_work' %}" style="background:#23272d;color:#fff;padding:0.6rem 1.2rem;border:none;border-radius:8px;font-size:1rem;font-weight:600;text-decoration:none;">Añadir Obra</a>
+                <a href="{% url 'edit_profile' %}" style="background:#eee;color:#23272d;padding:0.6rem 1.2rem;border:none;border-radius:8px;font-size:1rem;font-weight:600;text-decoration:none;">Editar Perfil</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Author's Works -->
+    <div id="author-works">
+        <h2 style="margin-bottom:1.5rem;">Obras de {{ profile_user.username }}</h2>
+        <div id="work-list">
+            {% for work in works %}
+            <div class="work" style="background:#fff;padding:1.5rem;border-radius:12px;box-shadow:0 2px 8px #0002;margin-bottom:1.5rem; position: relative;">
+                {% if user == profile_user %}
+                    <div style="position: absolute; top: 1rem; right: 1rem;">
+                        <a href="{% url 'edit_work' work.id %}" style="background:#eee;color:#23272d;padding:0.4rem 0.8rem;border:none;border-radius:6px;font-size:0.9rem;font-weight:600;text-decoration:none;">Editar</a>
+                    </div>
+                {% endif %}
+                <h3 style="margin:0 0 0.5rem 0;font-size:1.5rem;font-weight:700;"><a href="#" style="color:#23272d;text-decoration:none;">{{ work.title }}</a></h3>
+                <div style="margin-bottom: 1rem;">
+                    <span style="background-color: #e2e8f0; color: #4a5568; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600;">
+                        Género: {{ work.genre|default:"No especificado" }}
+                    </span>
+                    <span style="background-color: #e2e8f0; color: #4a5568; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; margin-left: 0.5rem;">
+                        Público: {{ work.target_audience|default:"No especificado" }}
+                    </span>
+                </div>
+                <p style="font-size:1.1rem;color:#555;line-height:1.6;">{{ work.description|linebreaksbr }}</p>
+                <span style="font-size:0.9rem;color:#888;">Publicado: {{ work.created_at|date:"d M Y" }}</span>
+            </div>
+            {% empty %}
+                <p style="background:#fff;padding:2rem;border-radius:12px;text-align:center;color:#888;">Este autor todavía no ha añadido ninguna obra.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

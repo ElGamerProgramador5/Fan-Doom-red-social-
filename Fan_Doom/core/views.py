@@ -7,7 +7,7 @@ from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_POST
 from .models import Follow, Author, Work, Post, Fandom, WikiPage, WorkFollow, Comment, Vote, Profile
-from .forms import ProfileForm
+from .forms import ProfileForm, WorkForm
 
 @login_required
 def home(request):
@@ -50,18 +50,29 @@ def home(request):
     seguidos = Follow.objects.filter(follower=request.user).values_list('followed', flat=True)
     autores_a_seguir = Author.objects.exclude(user__in=seguidos).exclude(user=request.user)[:6]
     total_autores = Author.objects.exclude(user__in=seguidos).exclude(user=request.user).count()
-    seguidas_obras_ids = WorkFollow.objects.filter(user=request.user).values_list('work_id', flat=True)
-    obras_a_seguir = Work.objects.exclude(id__in=seguidas_obras_ids)[:6]
-    total_obras = Work.objects.exclude(id__in=seguidas_obras_ids).count()
     fandoms = Fandom.objects.all()
+
+    # Exclude author's own works from 'works to follow' list
+    seguidas_obras_ids = WorkFollow.objects.filter(user=request.user).values_list('work_id', flat=True)
+    obras_a_seguir_query = Work.objects.exclude(id__in=seguidas_obras_ids)
+    if hasattr(request.user, 'author'):
+        obras_a_seguir_query = obras_a_seguir_query.exclude(author=request.user.author)
+    obras_a_seguir = obras_a_seguir_query[:6]
+    total_obras = obras_a_seguir_query.count()
+
+    # Combine followed works and author's own works for the posting dropdown
     works_followed = Work.objects.filter(id__in=seguidas_obras_ids)
+    works_for_posting = works_followed
+    if hasattr(request.user, 'author'):
+        authors_works = Work.objects.filter(author=request.user.author)
+        works_for_posting = works_followed.union(authors_works).order_by('title')
     
     return render(request, 'core/home.html', {
         'posts': posts,
         'authors': autores_a_seguir,
         'fandoms': fandoms,
         'works': obras_a_seguir,
-        'works_followed': works_followed,
+        'works_for_posting': works_for_posting,
         'error': error,
         'total_autores': total_autores,
         'total_obras': total_obras
@@ -179,6 +190,68 @@ def edit_profile_view(request):
         'form': form
     }
     return render(request, 'core/edit_profile.html', context)
+
+
+@login_required
+def author_profile(request, username):
+    author_user = get_object_or_404(User, username=username)
+    author = get_object_or_404(Author, user=author_user)
+    profile, created = Profile.objects.get_or_create(user=author_user)
+    author_works = Work.objects.filter(author=author).order_by('-created_at')
+
+    context = {
+        'profile_user': author_user,
+        'author': author,
+        'profile': profile,
+        'works': author_works,
+    }
+    return render(request, 'core/author_profile.html', context)
+
+
+@login_required
+def add_work(request):
+    try:
+        author = request.user.author
+    except Author.DoesNotExist:
+        return redirect('home') # Or show an error page
+
+    if request.method == 'POST':
+        form = WorkForm(request.POST)
+        if form.is_valid():
+            work = form.save(commit=False)
+            work.author = author
+            work.save()
+            return redirect('author_profile', username=request.user.username)
+    else:
+        form = WorkForm()
+
+    context = {
+        'form': form
+    }
+    return render(request, 'core/add_work.html', context)
+
+
+@login_required
+def edit_work(request, work_id):
+    work = get_object_or_404(Work, id=work_id)
+
+    # Security check: ensure the logged-in user is the author of the work
+    if work.author.user != request.user:
+        return redirect('home') # Or show a 403 Forbidden error
+
+    if request.method == 'POST':
+        form = WorkForm(request.POST, instance=work)
+        if form.is_valid():
+            form.save()
+            return redirect('author_profile', username=request.user.username)
+    else:
+        form = WorkForm(instance=work)
+
+    context = {
+        'form': form,
+        'work': work
+    }
+    return render(request, 'core/edit_work.html', context)
 
 def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)

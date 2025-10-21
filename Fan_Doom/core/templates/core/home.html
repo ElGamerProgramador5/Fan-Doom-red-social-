@@ -44,7 +44,7 @@
                         <div style="display:flex;flex-direction:column;gap:0.7rem;">
                             <select name="work" required style="width:100%;padding:0.5rem;border-radius:6px;border:1px solid #ccc;">
                                 <option value="">Selecciona una obra (como subreddit)</option>
-                                {% for work in works_followed %}
+                                {% for work in works_for_posting %}
                                     <option value="{{ work.id }}">{{ work.title }}</option>
                                 {% endfor %}
                             </select>
@@ -80,7 +80,13 @@
                     </div>
                     <div style="flex:1;min-width:0;">
                         <div style="display:flex;align-items:center;gap:0.7rem;margin-bottom:0.2rem;">
-                            <span style="font-size:0.97rem;color:#888;">Publicado por <b>{{ post.user.username }}</b> en <span style="color:#3b82f6;font-weight:600;">{{ post.work.title }}</span> • {{ post.created_at|date:"d M Y H:i" }}</span>
+                            <span style="font-size:0.97rem;color:#888;">Publicado por <b>
+                                {% if post.user.author %}
+                                    <a href="{% url 'author_profile' post.user.username %}" style="color: inherit; text-decoration: none;">{{ post.user.username }}</a>
+                                {% else %}
+                                    <a href="{% url 'profile' post.user.username %}" style="color: inherit; text-decoration: none;">{{ post.user.username }}</a>
+                                {% endif %}
+                            </b> en <span style="color:#3b82f6;font-weight:600;">{{ post.work.title }}</span> • {{ post.created_at|date:"d M Y H:i" }}</span>
                         </div>
                         <h2 style="margin:0 0 0.5rem 0;font-size:1.35rem;font-weight:700;line-height:1.2;"><a href="{% url 'post_detail' post.id %}" style="color:#23272d;text-decoration:none;">{{ post.title }}</a></h2>
                         {% if post.content %}<div style="margin-bottom:0.7rem;font-size:1.08rem;white-space:pre-line;">{{ post.content|linebreaksbr }}</div>{% endif %}
@@ -90,7 +96,13 @@
                         <a href="{% url 'post_detail' post.shared_post.id %}" style="text-decoration: none; color: inherit; display: block; margin-bottom: 0.7rem;">
                             <div class="shared-post" style="border: 1px solid #eee; border-radius: 8px; padding: 0.8rem;">
                                 <div style="display:flex;align-items:center;gap:0.7rem;margin-bottom:0.2rem;">
-                                    <span style="font-size:0.9rem;color:#888;">Compartido de <b>{{ post.shared_post.user.username }}</b> en <span style="color:#3b82f6;font-weight:600;">{{ post.shared_post.work.title }}</span></span>
+                                    <span style="font-size:0.9rem;color:#888;">Compartido de <b>
+                                        {% if post.shared_post.user.author %}
+                                            <a href="{% url 'author_profile' post.shared_post.user.username %}" style="color: inherit; text-decoration: none;">{{ post.shared_post.user.username }}</a>
+                                        {% else %}
+                                            <a href="{% url 'profile' post.shared_post.user.username %}" style="color: inherit; text-decoration: none;">{{ post.shared_post.user.username }}</a>
+                                        {% endif %}
+                                    </b> en <span style="color:#3b82f6;font-weight:600;">{{ post.shared_post.work.title }}</span></span>
                                 </div>
                                 <h3 style="margin:0 0 0.5rem 0;font-size:1.1rem;font-weight:700; color: #23272d;">{{ post.shared_post.title }}</h3>
                                 {% if post.shared_post.content %}
@@ -135,7 +147,59 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Follow buttons (author and work)
-    // ... (tu código existente para seguir autores y obras) ...
+    // Follow Author
+    document.querySelectorAll('.follow-author-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const authorId = this.closest('.author-follow-row').getAttribute('data-author-id');
+            const button = this;
+
+            fetch("{% url 'follow_author' %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `author_id=${authorId}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.ok) {
+                    button.textContent = 'Siguiendo';
+                    button.disabled = true;
+                    button.style.background = '#ccc';
+                } else {
+                    console.error('Error following author:', data.error);
+                }
+            });
+        });
+    });
+
+    // Follow Work
+    document.querySelectorAll('.follow-work-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const workId = this.closest('.work-follow-row').getAttribute('data-work-id');
+            const button = this;
+
+            fetch("{% url 'follow_work' %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `work_id=${workId}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.ok) {
+                    button.textContent = 'Siguiendo';
+                    button.disabled = true;
+                    button.style.background = '#ccc';
+                } else {
+                    console.error('Error following work:', data.error);
+                }
+            });
+        });
+    });
 
     // Vote buttons
     document.querySelectorAll('.vote-btn').forEach(function(btn) {
